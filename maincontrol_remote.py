@@ -180,7 +180,10 @@ def DCcontrol():
                             if current_speed < min_speed:
                                 current_speed = min_speed
                         move_motor(current_speed)
+                    else :
+                        move_motor(current_speed)
                     sleep(0.1)
+                    
             else:
                 A1A.stop()
                 break
