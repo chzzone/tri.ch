@@ -10,6 +10,10 @@ import Adafruit_DHT as dht
 from gpiozero import DistanceSensor, Motor, Button
 import lirc
 
+###internal lib###
+from tactswitch import tactswitch 
+from dcmotor import move_motor
+from servomotor import ServoPos
 
 from multiprocessing import Process
 
@@ -78,38 +82,6 @@ def yolo(frame, size, score_threshold, nms_threshold):
     
     coordinate = [center_x1, center_y1]
     return coordinate
-
-##############################################servo func#########################################
-def ServoPos(degree):
-
-    SERVO_MAX_DUTY    = 12   # cycle length of max pos
-    SERVO_MIN_DUTY    = 3    # cycle length of min pos
-    
-    if degree > 180 :
-        degree = 180
-    elif degree < 0 : 
-        degree = 0
-    
-    duty_cycle = int(500 + (degree / 180) * 2000)
-    pi.set_servo_pulsewidth(servopin, duty_cycle)
-    
-
-#######################################tact switch func############################################3
-def tactswitch(button_pin):
-   # GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-    tact_switch = Button(button_pin)
-    return int(tact_switch.is_pressed)
-
-########movemotor###########
-def move_motor(speed):
-    motor = Motor(forward=A1A_PIN, backward=A1B_PIN)
-    # 모터 제어 함수
-    if speed > 0:
-        motor.forward(speed)
-    elif speed < 0:
-        motor.backward(abs(speed))
-    else:
-        motor.stop()
 
 #######################################DC control############################################3
 def DCcontrol():
