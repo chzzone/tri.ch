@@ -3,13 +3,26 @@ import cv2
 import numpy as np
 import RPi.GPIO as GPIO 
 from time import sleep  
+import pigpio
+import time
 
 import Adafruit_DHT as dht
-from gpiozero import DistanceSensor
-
-import lirc
+from gpiozero import DistanceSensor, Motor, InfraredSensor, Button
 
 from multiprocessing import Process
+
+GPIO.setwarnings(False) 
+GPIO.setmode(GPIO.BCM) 
+
+button_pin = 21
+A1A_PIN = 23
+A1B_PIN = 24
+DHT_PIN = 19
+servopin = 12 
+remotepin = 27
+
+pi = pigpio.pi()
+ir_receiver = InfraredSensor(remotepin)
 
 ##############################################yolo func#############################################
 def yolo(frame, size, score_threshold, nms_threshold):
@@ -75,80 +88,110 @@ def ServoPos(degree):
     elif degree < 0 : 
         degree = 0
     
-    duty = SERVO_MIN_DUTY+(degree*(SERVO_MAX_DUTY-SERVO_MIN_DUTY)/180.0)
-    print("Degree: {} to {}(Duty)".format(degree, duty))
-
-    return duty
+    duty_cycle = int(500 + (degree / 180) * 2000)
+    pi.set_servo_pulsewidth(servopin, duty_cycle)
     
 
 #######################################tact switch func############################################3
 def tactswitch(button_pin):
-    GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-    
-    if GPIO.input(button_pin) == GPIO.HIGH:
-        a=1  
-    else :
-        a=0
-    return a
+   # GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+
+    tact_switch = Button(button_pin)
+    return int(tact_switch.is_pressed)
+
+########movemotor###########
+def move_motor(speed):
+    motor = Motor(forward=A1A_PIN, backward=A1B_PIN)
+    # 모터 제어 함수
+    if speed > 0:
+        motor.forward(speed)
+    elif speed < 0:
+        motor.backward(abs(speed))
+    else:
+        motor.stop()
 
 #######################################DC control############################################3
-def DCcontrol(A1A_PIN,A1B_PIN,DHT_PIN,button_pin):
+def DCcontrol():
     GPIO.setup(A1A_PIN, GPIO.OUT)
     GPIO.setup(A1B_PIN, GPIO.OUT)
+    
+    current_speed = 0
+    max_speed = 100
+    min_speed = 30
+    speed_step=10
+    
     pressed=0
+   
+
+    auto=0
 
     try:
         while 1:
             pressed==tactswitch(button_pin)
             if pressed==1 :
-                humidity, temperature = dht.read_retry(dht.DHT11, DHT_PIN)
-
-                if humidity <= 50:
-                    relative_temperature = temperature
-                elif humidity <= 60:
-                    relative_temperature = temperature + 1
-                elif humidity <= 70:
-                    relative_temperature = temperature + 2
-                elif humidity <= 80:
-                    relative_temperature = temperature + 3
-                elif humidity <= 90:
-                    relative_temperature = temperature + 4
+                if ir_receiver.is_pressed and ir_receiver.value == 0xFF0000:
+                    auto = not auto
                     
-                print(relative_temperature)
+                elif auto ==1 :
+                    humidity, temperature = dht.read_retry(dht.DHT11, DHT_PIN)
 
-                if relative_temperature > 28:
-                    print('상대온도 28도씨 조과')
-                    PWM_FREQ = 70
-                    A1A = GPIO.PWM(A1A_PIN, PWM_FREQ)
-                    A1B = GPIO.PWM(A1B_PIN, PWM_FREQ)
-                    A1A.start(0)
-                    A1A.ChangeDutyCycle((distance1-40)/7+70)
-                elif relative_temperature > 25:
-                    print('상대온도 25도씨 조과')
-                    PWM_FREQ = 60
-                    A1A = GPIO.PWM(A1A_PIN, PWM_FREQ)
-                    A1B = GPIO.PWM(A1B_PIN, PWM_FREQ)
-                    A1A.start(0)
-                    A1A.ChangeDutyCycle((distance1-40)/7+70)
-                elif relative_temperature > 23:
-                    print('상대온도 23도씨 조과')
-                    PWM_FREQ = 50
-                    A1A = GPIO.PWM(A1A_PIN, PWM_FREQ)
-                    A1B = GPIO.PWM(A1B_PIN, PWM_FREQ)
-                    A1A.start(0)
-                    A1A.ChangeDutyCycle((distance1-40)/7+70)
+                    if humidity <= 50:
+                        relative_temperature = temperature
+                    elif humidity <= 60:
+                        relative_temperature = temperature + 1
+                    elif humidity <= 70:
+                        relative_temperature = temperature + 2
+                    elif humidity <= 80:
+                        relative_temperature = temperature + 3
+                    elif humidity <= 90:
+                        relative_temperature = temperature + 4
+                    print(relative_temperature)
+
+                    if relative_temperature > 28:
+                        print('28')
+                        PWM_FREQ = 70
+                        A1A = GPIO.PWM(A1A_PIN, PWM_FREQ)
+                        A1B = GPIO.PWM(A1B_PIN, PWM_FREQ)
+                        A1A.start(0)
+                        A1A.ChangeDutyCycle((distance1-40)/7+70)
+                    elif relative_temperature > 25:
+                        print('25')
+                        PWM_FREQ = 60
+                        A1A = GPIO.PWM(A1A_PIN, PWM_FREQ)
+                        A1B = GPIO.PWM(A1B_PIN, PWM_FREQ)
+                        A1A.start(0)
+                        A1A.ChangeDutyCycle((distance1-40)/7+70)
+                    elif relative_temperature > 23:
+                        print('23')
+                        PWM_FREQ = 50
+                        A1A = GPIO.PWM(A1A_PIN, PWM_FREQ)
+                        A1B = GPIO.PWM(A1B_PIN, PWM_FREQ)
+                        A1A.start(0)
+                        A1A.ChangeDutyCycle((distance1-40)/7+70)
+                        
+                elif auto == 0 :
+                    if ir_receiver.is_pressed:
+                        if ir_receiver.value == 0xFF6897: #up
+                            current_speed += speed_step
+                            if current_speed > max_speed:
+                                current_speed = max_speed
+                        elif ir_receiver.value == 0xFF9867:  #down
+                            current_speed -= speed_step
+                            if current_speed < min_speed:
+                                current_speed = min_speed
+                        move_motor(current_speed)
+                    sleep(0.1)
             else:
                 A1A.stop()
                 break
-
     finally:
         GPIO.cleanup()
         
 
 ###############################servo control##################################################     
 
-def Servocontrol(servoPin,button_pin):        
-    GPIO.setup(servoPin, GPIO.OUT)  # setting for servo pin
+def Servocontrol():        
+    GPIO.setup(servopin, GPIO.OUT)  # setting for servo pin
     ###########################################camera setting##################################
     # size list
     size_list = [320, 416, 608]
@@ -164,26 +207,21 @@ def Servocontrol(servoPin,button_pin):
     fullxsize = coordinate_x_center*2 #full size of x
    
     #####################################servo motor setting####################################
-    servo = GPIO.PWM(servoPin, 50)  # PWM 50HZ 20ms
+    pi.set_PWM_frequency(servopin, 50)
     startposition = 90 #start position of servo
-    servo.start(0)  # start servo PWM, if duty=0, servo not working
-
-    servo.ChangeDutyCycle(ServoPos(startposition)) #move servo to the start position
+    ServoPos(startposition) #move servo to the start position
     currentposition = startposition #set current position to the start positino
     
     
-    ################################Lric setting################
-    sockid = lirc.init( "rc", blocking=False)
-    
     while True :
         pressed = tactswitch(button_pin)
-        button = lirc.nextcode()
         auto=0
         rotate=0
+        
         if pressed==1:
-            if button !=[] and button[0] == 'power':
+            if ir_receiver.is_pressed and ir_receiver.value == 0xFF0000:
                 auto = not auto
-            elif button !=[] and button[0] == 'play':
+            elif ir_receiver.is_pressed and ir_receiver.value == 0xFF0001:
                 rotate = not rotate
                 
             elif auto ==1 :
@@ -195,45 +233,38 @@ def Servocontrol(servoPin,button_pin):
                 finalposition = currentposition + (coordinate_x-coordinate_x_center/fullxsize*angleofcameraview) #final position func
                 
                 if cv2.waitKey(1) == ord('q'): ##quit
-                    servo.ChangeDutyCycle(ServoPos(startposition)) #move servo to the start position (reset)
+                    ServoPos(startposition) #move servo to the start position (reset)
                     break
                 elif coordinate_x_distance > coordinate_dis_av and coordinate_x !=0  :
-                    servo.ChangeDutyCycle(ServoPos(finalposition))
+                    ServoPos(finalposition)
                     currentposition = finalposition #current position update
                     sleep(1) 
+
             elif auto ==0 :
                 if rotate == 0 :
-                    servo.ChangeDutyCycle(currentposition)
+                    ServoPos(currentposition)
                 elif rotate == 1 :
                     semifinalposition = (currentposition + 2)
                     if semifinalposition >180:
                         finalposition == 180 - semifinalposition%180
                     else :
                         finalposition == semifinalposition
-                    servo.ChangeDutyCycle(finalposition)
+                    ServoPos(finalposition)
                     currentposition = finalposition
         else : 
-            servo.ChangeDutyCycle(ServoPos(startposition))
+            ServoPos(startposition)
             break
         
     cap.release()
     cv2.destroyAllWindows()
 
 ##########################################main func######################################
-GPIO.setwarnings(False) 
-GPIO.setmode(GPIO.BCM) 
 
-Button_PIN = 21
-A1A_PIN = 23
-A1B_PIN = 24
-DHT_PIN = 19
-servoPin = 12 
-
-p0 = Process(target=Servocontrol,args=(servoPin,Button_PIN))
-p1 = Process(target=DCcontrol,args=(A1A_PIN,A1B_PIN,DHT_PIN,Button_PIN))
+p0 = Process(target=Servocontrol)
+p1 = Process(target=DCcontrol)
 
 while 1 : 
-    if tactswitch(Button_PIN)==1:
+    if tactswitch(button_pin)==1:
         p0.start()
         p1.start()
         p0.join()
