@@ -18,9 +18,6 @@ def yolo(frame, size, score_threshold, nms_threshold):
     layer_names = net.getLayerNames()
     output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 
-    # random RGB
-    colors = np.random.uniform(0, 255, size=(len(classes), 3))
-
     height, width, channels = frame.shape
 
         # blob
