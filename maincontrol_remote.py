@@ -170,19 +170,20 @@ def Servocontrol(servoPin,button_pin):
 
     servo.ChangeDutyCycle(ServoPos(startposition)) #move servo to the start position
     currentposition = startposition #set current position to the start positino
-    pressed=0
+    
     
     ################################Lric setting################
     sockid = lirc.init( "rc", blocking=False)
     
     while True :
+        pressed = tactswitch(button_pin)
         button = lirc.nextcode()
         auto=0
         rotate=0
         if pressed==1:
-            if button !=[] and button == 'power':
+            if button !=[] and button[0] == 'power':
                 auto = not auto
-            elif button !=[] and button == 'play':
+            elif button !=[] and button[0] == 'play':
                 rotate = not rotate
                 
             elif auto ==1 :
@@ -231,7 +232,9 @@ servoPin = 12
 p0 = Process(target=Servocontrol,args=(servoPin,Button_PIN))
 p1 = Process(target=DCcontrol,args=(A1A_PIN,A1B_PIN,DHT_PIN,Button_PIN))
 
-p0.start()
-p1.start()
-p0.join()
-p1.join()
+while 1 : 
+    if tactswitch(Button_PIN)==1:
+        p0.start()
+        p1.start()
+        p0.join()
+        p1.join()
