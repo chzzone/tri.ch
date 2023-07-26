@@ -7,12 +7,15 @@ import pigpio
 import time
 
 import Adafruit_DHT as dht
-from gpiozero import DistanceSensor, Motor, InfraredSensor, Button
+from gpiozero import DistanceSensor, Motor, Button
+import lirc
+
 
 from multiprocessing import Process
 
 GPIO.setwarnings(False) 
 GPIO.setmode(GPIO.BCM) 
+socketid = lirc.init("irtest", blocking=False)
 
 button_pin = 21
 A1A_PIN = 23
@@ -20,9 +23,8 @@ A1B_PIN = 24
 DHT_PIN = 19
 servopin = 12 
 remotepin = 27
-
-pi = pigpio.pi()
-ir_receiver = InfraredSensor(remotepin)
+IRbutton = lirc.nextcode()
+pi=pigpio.pi()
 
 ##############################################yolo func#############################################
 def yolo(frame, size, score_threshold, nms_threshold):
@@ -95,7 +97,6 @@ def ServoPos(degree):
 #######################################tact switch func############################################3
 def tactswitch(button_pin):
    # GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-
     tact_switch = Button(button_pin)
     return int(tact_switch.is_pressed)
 
@@ -129,7 +130,7 @@ def DCcontrol():
         while 1:
             pressed==tactswitch(button_pin)
             if pressed==1 :
-                if ir_receiver.is_pressed and ir_receiver.value == 0xFF0000:
+                if IRbutton!=[] and IRbutton == 0xFF0000:
                     auto = not auto
                     
                 elif auto ==1 :
@@ -170,12 +171,12 @@ def DCcontrol():
                         A1A.ChangeDutyCycle((distance1-40)/7+70)
                         
                 elif auto == 0 :
-                    if ir_receiver.is_pressed:
-                        if ir_receiver.value == 0xFF6897: #up
+                    if IRbutton != []:
+                        if IRbutton.value == 0xFF6897: #up
                             current_speed += speed_step
                             if current_speed > max_speed:
                                 current_speed = max_speed
-                        elif ir_receiver.value == 0xFF9867:  #down
+                        elif IRbutton.value == 0xFF9867:  #down
                             current_speed -= speed_step
                             if current_speed < min_speed:
                                 current_speed = min_speed
@@ -222,9 +223,9 @@ def Servocontrol():
         rotate=0
         
         if pressed==1:
-            if ir_receiver.is_pressed and ir_receiver.value == 0xFF0000:
+            if IRbutton != [] and IRbutton == 0xFF0000:
                 auto = not auto
-            elif ir_receiver.is_pressed and ir_receiver.value == 0xFF0001:
+            elif IRbutton != [] and IRbutton == 0xFF0001:
                 rotate = not rotate
                 
             elif auto ==1 :
