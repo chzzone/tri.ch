@@ -9,6 +9,7 @@ import time
 import Adafruit_DHT as dht
 from gpiozero import DistanceSensor, Motor, Button
 import lirc
+#sensor=DistanceSensor(echo=27, trigger=22, max_distance=6)
 
 ###internal lib###
 from tactswitch import tactswitch 
@@ -33,7 +34,7 @@ pi=pigpio.pi()
 ##############################################yolo func#############################################
 def yolo(frame, size, score_threshold, nms_threshold):
     #  yolo network
-    net = cv2.dnn.readNet(f"/Users/han/vscode/python/yolov3-tiny.weights","/Users/han/vscode/python/yolov3-tiny.cfg")
+    net = cv2.dnn.readNet(f"/weight","/config")
     layer_names = net.getLayerNames()
     output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 
@@ -92,7 +93,7 @@ def DCcontrol():
     max_speed = 100
     min_speed = 30
     speed_step=10
-    
+    #relative_temperature=0
     pressed=0
    
 
@@ -107,6 +108,11 @@ def DCcontrol():
                     
                 elif auto ==1 :
                     humidity, temperature = dht.read_retry(dht.DHT11, DHT_PIN)
+                    # humidity=float(humidity)
+                    # temperature = float(temperature)
+                    #distance1=sensor.distance*1
+                    #print("checked distance = %.1fcm"%distance1)
+                    #sleep(0.1)                   
 
                     if humidity <= 50:
                         relative_temperature = temperature
@@ -132,6 +138,9 @@ def DCcontrol():
                         print('23')
                         current_speed = 30
                         #(distance1-40)/7+70)
+                    #else:
+                        #print('Low temperature')
+                        #current_speed=15
                     move_motor(current_speed)     
                 elif auto == 0 :
                     if IRbutton != []:
@@ -232,6 +241,6 @@ p1 = Process(target=DCcontrol)
 while 1 : 
     if tactswitch(button_pin)==1:
         p0.start()
-        p1.start()
+       # p1.start()
         p0.join()
-        p1.join()
+        #p1.join()
