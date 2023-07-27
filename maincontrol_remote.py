@@ -122,6 +122,7 @@ def DCcontrol():
     #relative_temperature=0
     pressed=0
     auto=0
+    old_IRbutton=0
 
     try:
         while 1:
@@ -130,60 +131,61 @@ def DCcontrol():
             pressed==tactswitch()
             sleep(0.1)
             if pressed==1 :
-                if IRbutton!=0 and IRbutton == 67:
+                if IRbutton!=0 and IRbutton == 67 and old_IRbutton ==0 :
                     auto = not auto
-                    
-                    
-                elif auto ==1 :
-                    humidity, temperature = dht.read_retry(dht.DHT11, DHT_PIN)
-                    # humidity=float(humidity)
-                    # temperature = float(temperature)
-                    #distance1=sensor.distance*1
-                    # print("checked distance = %.1fcm"%distance1)
-                    #sleep(0.1)                   
+                    old_IRbutton = 67
+                elif IRbutton==0 :
+                    old_IRbutton =0
+                    if auto ==1 :
+                        humidity, temperature = dht.read_retry(dht.DHT11, DHT_PIN)
+                        # humidity=float(humidity)
+                        # temperature = float(temperature)
+                        #distance1=sensor.distance*1
+                        # print("checked distance = %.1fcm"%distance1)
+                        #sleep(0.1)                   
 
-                    if humidity <= 50:
-                        relative_temperature = temperature
-                    elif humidity <= 60:
-                        relative_temperature = temperature + 1
-                    elif humidity <= 70:
-                        relative_temperature = temperature + 2
-                    elif humidity <= 80:
-                        relative_temperature = temperature + 3
-                    elif humidity <= 90:
-                        relative_temperature = temperature + 4
-                    print(relative_temperature)
+                        if humidity <= 50:
+                            relative_temperature = temperature
+                        elif humidity <= 60:
+                            relative_temperature = temperature + 1
+                        elif humidity <= 70:
+                            relative_temperature = temperature + 2
+                        elif humidity <= 80:
+                            relative_temperature = temperature + 3
+                        elif humidity <= 90:
+                            relative_temperature = temperature + 4
+                        print(relative_temperature)
 
-                    if relative_temperature > 28:
-                        print('28')
-                        current_speed = 70
-                        #((distance1-40)/7+70)
-                    elif relative_temperature > 25:
-                        print('25')
-                        current_speed = 50
-                        #((distance1-40)/7+70)
-                    elif relative_temperature > 23:
-                        print('23')
-                        current_speed = 30
-                        #(distance1-40)/7+70)
-                    #else:
-                        #print('Low temperature')
-                        #current_speed=15
-                    move_motor(current_speed)     
-                elif auto == 0 :
-                    if IRbutton != 0:
-                        if IRbutton == 21: #up
-                            current_speed += speed_step
-                            if current_speed > max_speed:
-                                current_speed = max_speed
-                        elif IRbutton == 7:  #down
-                            current_speed -= speed_step
-                            if current_speed < min_speed:
-                                current_speed = min_speed
-                        move_motor(current_speed)
-                    else :
-                        move_motor(current_speed)
-                    sleep(0.1)     
+                        if relative_temperature > 28:
+                            print('28')
+                            current_speed = 70
+                            #((distance1-40)/7+70)
+                        elif relative_temperature > 25:
+                            print('25')
+                            current_speed = 50
+                            #((distance1-40)/7+70)
+                        elif relative_temperature > 23:
+                            print('23')
+                            current_speed = 30
+                            #(distance1-40)/7+70)
+                        #else:
+                            #print('Low temperature')
+                            #current_speed=15
+                        move_motor(current_speed)     
+                    elif auto == 0 :
+                        if IRbutton != 0:
+                            if IRbutton == 21: #up
+                                current_speed += speed_step
+                                if current_speed > max_speed:
+                                    current_speed = max_speed
+                            elif IRbutton == 7:  #down
+                                current_speed -= speed_step
+                                if current_speed < min_speed:
+                                    current_speed = min_speed
+                            move_motor(current_speed)
+                        else :
+                            move_motor(current_speed)
+                        sleep(0.1)     
             else:
                 auto = 0
                 move_motor(0)
@@ -217,45 +219,49 @@ def Servocontrol():
     
     
     while True :
-        pressed = tactswitch(button_pin)
         auto=0
         rotate=0
-        dev = get_ir_device()
-        IRbutton=dev.read_one()
+        old_IRbutton=0
         
         if pressed==1:
-            if IRbutton != 0 and IRbutton == 67:
+            dev = get_ir_device()
+            IRbutton=dev.read_one()
+            pressed = tactswitch()
+            if IRbutton != 0 and IRbutton == 67 and old_IRbutton ==0 :
                 auto = not auto
-            elif IRbutton != 0 and IRbutton == 9:
+                old_IRbutton = 67
+            elif IRbutton != 0 and IRbutton == 9 and old_IRbutton ==0 :
                 rotate = not rotate
-                
-            elif auto ==1 :
-                _,frame = cap.read()
-                coordinate = yolo(frame=frame, size=size_list[2], score_threshold=0.4, nms_threshold=0.4)
-                coordinate_x = coordinate[0]
-                
-                coordinate_x_distance = abs(coordinate_x-coordinate_x_center) #distance from center
-                finalposition = currentposition + (coordinate_x-coordinate_x_center/fullxsize*angleofcameraview) #final position func
-                
-                if cv2.waitKey(1) == ord('q'): ##quit
-                    ServoPos(startposition) #move servo to the start position (reset)
-                    break
-                elif coordinate_x_distance > coordinate_dis_av and coordinate_x !=0  :
-                    ServoPos(finalposition)
-                    currentposition = finalposition #current position update
-                    sleep(1) 
+                old_IRbutton = 9 
+            elif IRbutton == 0:
+                old_IRbutton = 0
+                if auto ==1 :
+                    _,frame = cap.read()
+                    coordinate = yolo(frame=frame, size=size_list[2], score_threshold=0.4, nms_threshold=0.4)
+                    coordinate_x = coordinate[0]
+                    
+                    coordinate_x_distance = abs(coordinate_x-coordinate_x_center) #distance from center
+                    finalposition = currentposition + (coordinate_x-coordinate_x_center/fullxsize*angleofcameraview) #final position func
+                    
+                    if cv2.waitKey(1) == ord('q'): ##quit
+                        ServoPos(startposition) #move servo to the start position (reset)
+                        break
+                    elif coordinate_x_distance > coordinate_dis_av and coordinate_x !=0  :
+                        ServoPos(finalposition)
+                        currentposition = finalposition #current position update
+                        sleep(1) 
 
-            elif auto ==0 :
-                if rotate == 0 :
-                    ServoPos(currentposition)
-                elif rotate == 1 :
-                    semifinalposition = (currentposition + 2)
-                    if semifinalposition >180:
-                        finalposition == 180 - semifinalposition%180
-                    else :
-                        finalposition == semifinalposition
-                    ServoPos(finalposition)
-                    currentposition = finalposition
+                elif auto ==0 :
+                    if rotate == 0 :
+                        ServoPos(currentposition)
+                    elif rotate == 1 :
+                        semifinalposition = (currentposition + 2)
+                        if semifinalposition >180:
+                            finalposition == 180 - semifinalposition%180
+                        else :
+                            finalposition == semifinalposition
+                        ServoPos(finalposition)
+                        currentposition = finalposition
         else : 
             ServoPos(startposition)
             auto = 0
