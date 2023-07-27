@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 from time import sleep  
-
-import RPi.GPIO as GPIO
+from EmulatorGUI import GPIO
+#import RPi.GPIO #as GPIO
 import pigpio
 import Adafruit_DHT as dht
 from gpiozero import DistanceSensor, Motor, Button
@@ -58,7 +58,7 @@ def move_motor(speed):
 #######################################tact switch func############################################3
 def tactswitch():
    # GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-    return int(GPIO.inpout(button_pin)==GPIO.HIGH)
+    return int(GPIO.input(button_pin)==GPIO.HIGH)
 ##############################################yolo func#############################################
 def yolo(frame, size, score_threshold, nms_threshold):
     #  yolo network
