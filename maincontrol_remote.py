@@ -20,7 +20,8 @@ from servomotor import ServoPos
 from multiprocessing import Process
 
 GPIO.setwarnings(False) 
-GPIO.setmode(GPIO.BCM) 
+GPIO.setmode(GPIO.BCM)
+
 
 button_pin = 21
 A1A_PIN = 23
@@ -29,6 +30,9 @@ DHT_PIN = 19
 servopin = 12 
 remotepin = 27
 pi=pigpio.pi()
+
+GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
 
 ##############################################yolo func#############################################
 def yolo(frame, size, score_threshold, nms_threshold):
