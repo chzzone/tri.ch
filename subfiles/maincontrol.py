@@ -208,8 +208,8 @@ A1B_PIN = 24
 DHT_PIN = 19
 servoPin = 12 
 
-p0 = Process(target=Servocontrol,args=(servoPin,Button_PIN))
-p1 = Process(target=DCcontrol,args=(A1A_PIN,A1B_PIN,DHT_PIN,Button_PIN))
+p0 = Process(target=Servocontrol)
+p1 = Process(target=DCcontrol)
 
 p0.start()
 p1.start()
