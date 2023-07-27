@@ -121,15 +121,14 @@ def DCcontrol():
     
     current_speed = 0
     relative_temperature = 0
-    pressed = 0
     auto = 0
     old_IRbutton = 0
 
     try:
         while 1:
             dev = get_ir_device()
-            IRbutton=dev.read_one()
-            pressed==tactswitch()
+            IRbutton = dev.read_one()
+            pressed = tactswitch()
             sleep(0.1)
             if pressed==1 :
                 if IRbutton!=0 and IRbutton == 67 and old_IRbutton == 0 :
@@ -214,18 +213,17 @@ def Servocontrol():
     pi.set_PWM_frequency(servopin, 50)
     startposition = 90 #start position of servo
     ServoPos(startposition) #move servo to the start position
-    currentposition = startposition #set current position to the start positino
     
+    currentposition = startposition #set current position to the start positino
+    auto=0
+    rotate=0
+    old_IRbutton=0
     
     while True :
-        auto=0
-        rotate=0
-        old_IRbutton=0
-        
+        dev = get_ir_device()
+        IRbutton = dev.read_one()
+        pressed = tactswitch()
         if pressed==1:
-            dev = get_ir_device()
-            IRbutton=dev.read_one()
-            pressed = tactswitch()
             if IRbutton != 0 and IRbutton == 67 and old_IRbutton ==0 :
                 auto = not auto
                 old_IRbutton = 67
