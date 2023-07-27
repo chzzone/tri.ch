@@ -33,7 +33,7 @@ pi=pigpio.pi()
 ##############################################yolo func#############################################
 def yolo(frame, size, score_threshold, nms_threshold):
     #  yolo network
-    net = cv2.dnn.readNet(f"/weight","/config")
+    net = cv2.dnn.readNet(f"/home/pi/tri.ch/yolov3-tiny.weights","/home/pi/tri.ch/yolov3-tiny.cfg")
     layer_names = net.getLayerNames()
     output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 
