@@ -241,13 +241,16 @@ def Servocontrol():
     cv2.destroyAllWindows()
 
 ##########################################main func######################################
+Servocontrol()
 
-p0 = Process(target=Servocontrol)
-p1 = Process(target=DCcontrol)
+# ####
+# p0 = Process(target=Servocontrol)
+# p1 = Process(target=DCcontrol)
 
-while 1 : 
-    if tactswitch(button_pin)==1:
-        p0.start()
-       # p1.start()
-        p0.join()
-        #p1.join()
+# while 1 : 
+#     if tactswitch(button_pin)==1:
+#         p0.start()
+#        # p1.start()
+#         p0.join()
+#         #p1.join()
+# ####
