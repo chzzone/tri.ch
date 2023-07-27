@@ -1,4 +1,4 @@
-from gpiozero import DistanceSensor, Motor, Button
+from gpiozero import Motor
 A1A_PIN = 23
 A1B_PIN = 24
 ########movemotor###########

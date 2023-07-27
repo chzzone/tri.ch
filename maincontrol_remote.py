@@ -122,26 +122,17 @@ def DCcontrol():
 
                     if relative_temperature > 28:
                         print('28')
-                        PWM_FREQ = 70
-                        A1A = GPIO.PWM(A1A_PIN, PWM_FREQ)
-                        A1B = GPIO.PWM(A1B_PIN, PWM_FREQ)
-                        A1A.start(0)
-                        A1A.ChangeDutyCycle((distance1-40)/7+70)
+                        current_speed = 70
+                        #((distance1-40)/7+70)
                     elif relative_temperature > 25:
                         print('25')
-                        PWM_FREQ = 60
-                        A1A = GPIO.PWM(A1A_PIN, PWM_FREQ)
-                        A1B = GPIO.PWM(A1B_PIN, PWM_FREQ)
-                        A1A.start(0)
-                        A1A.ChangeDutyCycle((distance1-40)/7+70)
+                        current_speed = 50
+                        #((distance1-40)/7+70)
                     elif relative_temperature > 23:
                         print('23')
-                        PWM_FREQ = 50
-                        A1A = GPIO.PWM(A1A_PIN, PWM_FREQ)
-                        A1B = GPIO.PWM(A1B_PIN, PWM_FREQ)
-                        A1A.start(0)
-                        A1A.ChangeDutyCycle((distance1-40)/7+70)
-                        
+                        current_speed = 30
+                        #(distance1-40)/7+70)
+                    move_motor(current_speed)     
                 elif auto == 0 :
                     if IRbutton != []:
                         if IRbutton.value == 0xFF6897: #up
@@ -155,10 +146,9 @@ def DCcontrol():
                         move_motor(current_speed)
                     else :
                         move_motor(current_speed)
-                    sleep(0.1)
-                    
+                    sleep(0.1)     
             else:
-                A1A.stop()
+                move_motor(0)
                 break
     finally:
         GPIO.cleanup()

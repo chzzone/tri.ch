@@ -1,4 +1,5 @@
 import pigpio
+from time import sleep
 pi=pigpio.pi()
 servopin = 12 
 ##############################################servo func#########################################
