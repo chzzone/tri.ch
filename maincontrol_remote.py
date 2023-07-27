@@ -115,14 +115,15 @@ def yolo(frame, size, score_threshold, nms_threshold):
 #######################################DC control############################################3
 def DCcontrol():
     
-    current_speed = 0
     max_speed = 100
     min_speed = 30
-    speed_step=10
-    #relative_temperature=0
-    pressed=0
-    auto=0
-    old_IRbutton=0
+    speed_step = 3
+    
+    current_speed = 0
+    relative_temperature = 0
+    pressed = 0
+    auto = 0
+    old_IRbutton = 0
 
     try:
         while 1:
@@ -131,18 +132,19 @@ def DCcontrol():
             pressed==tactswitch()
             sleep(0.1)
             if pressed==1 :
-                if IRbutton!=0 and IRbutton == 67 and old_IRbutton ==0 :
+                if IRbutton!=0 and IRbutton == 67 and old_IRbutton == 0 :
                     auto = not auto
                     old_IRbutton = 67
-                elif IRbutton==0 :
-                    old_IRbutton =0
-                    if auto ==1 :
+                elif IRbutton == 0 :
+                    old_IRbutton = 0
+                    if auto == 1 :
                         humidity, temperature = dht.read_retry(dht.DHT11, DHT_PIN)
-                        # humidity=float(humidity)
-                        # temperature = float(temperature)
-                        #distance1=sensor.distance*1
-                        # print("checked distance = %.1fcm"%distance1)
-                        #sleep(0.1)                   
+                        humidity = float(humidity)
+                        temperature = float(temperature)
+                        sensor = DistanceSensor(echo=17, trigger=22, max_distance=7)
+                        distance1 = sensor.distance*1
+                        print("checked distance = %.1fcm"%distance1)
+                        sleep(0.1)                   
 
                         if humidity <= 50:
                             relative_temperature = temperature
@@ -158,19 +160,16 @@ def DCcontrol():
 
                         if relative_temperature > 28:
                             print('28')
-                            current_speed = 70
-                            #((distance1-40)/7+70)
+                            current_speed = (distance1-40)/7+70
                         elif relative_temperature > 25:
                             print('25')
-                            current_speed = 50
-                            #((distance1-40)/7+70)
+                            current_speed = (distance1-40)/7+50
                         elif relative_temperature > 23:
                             print('23')
-                            current_speed = 30
-                            #(distance1-40)/7+70)
-                        #else:
-                            #print('Low temperature')
-                            #current_speed=15
+                            current_speed = (distance1-40)/7+30
+                        else:
+                            print('Low temperature')
+                            current_speed = 40
                         move_motor(current_speed)     
                     elif auto == 0 :
                         if IRbutton != 0:
@@ -207,8 +206,8 @@ def Servocontrol():
 
     ########################################algorithm setting#####################################
     coordinate_x_center = 500 #center of x coordinate
-    coordinate_dis_av = 100 #center displacement range
-    angleofcameraview = 120
+    coordinate_dis_av = 100 #allowed center displacement range
+    angleofcameraview = 120 #max angle
     fullxsize = coordinate_x_center*2 #full size of x
    
     #####################################servo motor setting####################################
@@ -233,6 +232,7 @@ def Servocontrol():
             elif IRbutton != 0 and IRbutton == 9 and old_IRbutton ==0 :
                 rotate = not rotate
                 old_IRbutton = 9 
+            
             elif IRbutton == 0:
                 old_IRbutton = 0
                 if auto ==1 :
@@ -246,10 +246,12 @@ def Servocontrol():
                     if cv2.waitKey(1) == ord('q'): ##quit
                         ServoPos(startposition) #move servo to the start position (reset)
                         break
-                    elif coordinate_x_distance > coordinate_dis_av and coordinate_x !=0  :
+                    elif (coordinate_x_distance > coordinate_dis_av) and coordinate_x !=0  :
                         ServoPos(finalposition)
                         currentposition = finalposition #current position update
-                        sleep(1) 
+                        sleep(1)
+                    else : 
+                        ServoPos(currentposition)
 
                 elif auto ==0 :
                     if rotate == 0 :
@@ -257,7 +259,7 @@ def Servocontrol():
                     elif rotate == 1 :
                         semifinalposition = (currentposition + 2)
                         if semifinalposition >180:
-                            finalposition == 180 - semifinalposition%180
+                            finalposition = 180 - semifinalposition%180
                         else :
                             finalposition == semifinalposition
                         ServoPos(finalposition)
