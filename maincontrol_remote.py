@@ -1,27 +1,17 @@
 import cv2
-
 import numpy as np
-import RPi.GPIO as GPIO 
 from time import sleep  
-import pigpio
-import time
 
+import RPi.GPIO as GPIO
+import pigpio
 import Adafruit_DHT as dht
 from gpiozero import DistanceSensor, Motor, Button
 import evdev
-from get_ir_device import get_ir_device
-#sensor=DistanceSensor(echo=27, trigger=22, max_distance=6)
-
-###internal lib###
-from tactswitch import tactswitch 
-from dcmotor import move_motor
-from servomotor import ServoPos
 
 from multiprocessing import Process
 
 GPIO.setwarnings(False) 
 GPIO.setmode(GPIO.BCM)
-
 
 button_pin = 21
 A1A_PIN = 23
@@ -29,11 +19,50 @@ A1B_PIN = 24
 DHT_PIN = 19
 servopin = 12 
 remotepin = 27
-pi=pigpio.pi()
 
+GPIO.setup(A1A_PIN, GPIO.OUT)
+GPIO.setup(A1B_PIN, GPIO.OUT)
+GPIO.setup(servopin, GPIO.OUT)  # setting for servo pin
 GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
+pi=pigpio.pi()
 
+##############################################servo func#########################################
+def ServoPos(degree):
+
+    SERVO_MAX_DUTY    = 12   # cycle length of max pos
+    SERVO_MIN_DUTY    = 3    # cycle length of min pos
+    
+    if degree > 180 :
+        degree = 180
+    elif degree < 0 : 
+        degree = 0
+    
+    duty_cycle = int(500 + (degree / 180) * 2000)
+    pi.set_servo_pulsewidth(servopin, duty_cycle)
+
+############################################remote control#####################333#####################
+def get_ir_device():
+    devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+    for device in devices:
+        if (device.name == "gpio_ir_recv"):
+            return device
+
+########################################movemotor###############################################33##
+def move_motor(speed):
+    motor = Motor(forward=A1A_PIN, backward=A1B_PIN)
+    # 모터 제어 함수
+    if speed > 0:
+        motor.forward(speed)
+    elif speed < 0:
+        motor.backward(abs(speed))
+    else:
+        motor.stop()
+
+#######################################tact switch func############################################3
+def tactswitch(button_pin):
+   # GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
+   return int(GPIO.inpout(button_pin)==GPIO.HIGH)
 ##############################################yolo func#############################################
 def yolo(frame, size, score_threshold, nms_threshold):
     #  yolo network
@@ -89,8 +118,6 @@ def yolo(frame, size, score_threshold, nms_threshold):
 
 #######################################DC control############################################3
 def DCcontrol():
-    GPIO.setup(A1A_PIN, GPIO.OUT)
-    GPIO.setup(A1B_PIN, GPIO.OUT)
     
     current_speed = 0
     max_speed = 100
@@ -98,8 +125,6 @@ def DCcontrol():
     speed_step=10
     #relative_temperature=0
     pressed=0
-   
-
     auto=0
 
     try:
@@ -149,11 +174,11 @@ def DCcontrol():
                     move_motor(current_speed)     
                 elif auto == 0 :
                     if IRbutton != 0:
-                        if IRbutton.value == 21: #up
+                        if IRbutton == 21: #up
                             current_speed += speed_step
                             if current_speed > max_speed:
                                 current_speed = max_speed
-                        elif IRbutton.value == 7:  #down
+                        elif IRbutton == 7:  #down
                             current_speed -= speed_step
                             if current_speed < min_speed:
                                 current_speed = min_speed
@@ -162,6 +187,7 @@ def DCcontrol():
                         move_motor(current_speed)
                     sleep(0.1)     
             else:
+                auto = 0
                 move_motor(0)
                 break
     finally:
@@ -171,7 +197,6 @@ def DCcontrol():
 ###############################servo control##################################################     
 
 def Servocontrol():        
-    GPIO.setup(servopin, GPIO.OUT)  # setting for servo pin
     ###########################################camera setting##################################
     # size list
     size_list = [320, 416, 608]
@@ -235,6 +260,8 @@ def Servocontrol():
                     currentposition = finalposition
         else : 
             ServoPos(startposition)
+            auto = 0
+            rotate = 0
             break
         
     cap.release()
