@@ -29,9 +29,6 @@ pi=pigpio.pi()
 
 ##############################################servo func#########################################
 def ServoPos(degree):
-
-    SERVO_MAX_DUTY    = 12   # cycle length of max pos
-    SERVO_MIN_DUTY    = 3    # cycle length of min pos
     
     if degree > 180 :
         degree = 180
@@ -47,11 +44,10 @@ def get_ir_device():
     for device in devices:
         if (device.name == "gpio_ir_recv"):
             return device
-
 ########################################movemotor###############################################33##
 def move_motor(speed):
     motor = Motor(forward=A1A_PIN, backward=A1B_PIN)
-    # 모터 제어 함수
+    
     if speed > 0:
         motor.forward(speed)
     elif speed < 0:
@@ -60,9 +56,9 @@ def move_motor(speed):
         motor.stop()
 
 #######################################tact switch func############################################3
-def tactswitch(button_pin):
+def tactswitch():
    # GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) 
-   return int(GPIO.inpout(button_pin)==GPIO.HIGH)
+    return int(GPIO.inpout(button_pin)==GPIO.HIGH)
 ##############################################yolo func#############################################
 def yolo(frame, size, score_threshold, nms_threshold):
     #  yolo network
@@ -131,10 +127,12 @@ def DCcontrol():
         while 1:
             dev = get_ir_device()
             IRbutton=dev.read_one()
-            pressed==tactswitch(button_pin)
+            pressed==tactswitch()
+            sleep(0.1)
             if pressed==1 :
                 if IRbutton!=0 and IRbutton == 67:
                     auto = not auto
+                    
                     
                 elif auto ==1 :
                     humidity, temperature = dht.read_retry(dht.DHT11, DHT_PIN)
