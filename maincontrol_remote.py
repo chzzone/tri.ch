@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
 from time import sleep  
-from EmulatorGUI import GPIO
-#import RPi.GPIO #as GPIO
+import RPi.GPIO as GPIO
 import pigpio
 import Adafruit_DHT as dht
 from gpiozero import DistanceSensor, Motor, Button
