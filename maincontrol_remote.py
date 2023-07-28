@@ -12,7 +12,7 @@ from multiprocessing import Process
 GPIO.setwarnings(False) 
 GPIO.setmode(GPIO.BCM)
 
-button_pin = 21
+button_pin = 15
 A1A_PIN = 23
 A1B_PIN = 24
 DHT_PIN = 19
