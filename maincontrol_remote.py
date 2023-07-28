@@ -186,7 +186,7 @@ def DCcontrol():
             else:
                 auto = 0
                 move_motor(0)
-                break
+                
     finally:
         GPIO.cleanup()
         
@@ -217,10 +217,13 @@ def Servocontrol():
     auto=0
     rotate=0
     old_IRbutton=0
+    dev = get_ir_device()
+    IRbutton = 0 
+e
     
     while True :
-        dev = get_ir_device()
-        IRbutton = dev.read_one()
+        event = dev.read_one()
+        IRbutton = event.value
         pressed = tactswitch()
         if pressed==1:
             if IRbutton != 0 and IRbutton == 67 and old_IRbutton ==0 :
@@ -265,7 +268,6 @@ def Servocontrol():
             ServoPos(startposition)
             auto = 0
             rotate = 0
-            break
         
     cap.release()
     cv2.destroyAllWindows()
